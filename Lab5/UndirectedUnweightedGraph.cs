@@ -23,7 +23,7 @@ namespace Lab5
                 using (StreamReader sr = new StreamReader(path))
                 {
                     string line;
-                    while ((line = sr.ReadLine()) != null)
+                    while ((line = sr.ReadLine()!) is not null)
                     {
                         line = line.Trim();
                         if (line == "")
@@ -55,7 +55,7 @@ namespace Lab5
             // Add nodes
             string[] nodeNames = Regex.Split(lines[0], @"\W+");
 
-            foreach (var name in nodeNames)
+            foreach (string name in nodeNames)
             {
                 Nodes.Add(new Node(name));
             }
@@ -77,24 +77,19 @@ namespace Lab5
 
         public void AddEdge(string node1Name, string node2Name)
         {
-            Node node1 = GetNodeByName(node1Name);
-            Node node2 = GetNodeByName(node2Name);
+            Node? node1 = GetNodeByName(node1Name);
+            Node? node2 = GetNodeByName(node2Name);
 
-            if (node1 == null || node2 == null)
+            if (node1 is null || node2 is null)
             {
                 throw new Exception("Invalid node name");
             }
 
-            node1.Neighbors.Add( new Neighbor() { Node=node2, Weight=1 } );
-            node2.Neighbors.Add( new Neighbor() { Node=node1, Weight=1 } );
+            node1.Neighbors.Add(new Neighbor(node2));
+            node2.Neighbors.Add(new Neighbor(node1));
         }
 
-        private Node GetNodeByName(string nodeName)
-        {
-            var node = Nodes.Find(node => node.Name == nodeName);
-
-            return node;
-        }
+        private Node? GetNodeByName(string nodeName) => Nodes.Find(node => node.Name == nodeName);
 
         public int ConnectedComponents
         {
@@ -103,12 +98,21 @@ namespace Lab5
                 int numConnectedComponents = 0;
 
                 // choose a random vertex
+                Node startingNode = Nodes[0];
                 // do a DFS from that vertex
+                // Leave reset to true to initialize state
+                DFS(startingNode, reset: true);
                 // increment the CC count
-                // choose a random vertex that is white (unvisited)
-                // do a DFS from that vertex
-                // increment the CC count
-                // choose a random vertex that is white (unvisited)
+                numConnectedComponents++;
+
+                foreach (Node node in Nodes[1..])
+                {
+                    if (node.State == VertexState.UnDiscovered)
+                    {
+                        DFS(node, reset: false);
+                        numConnectedComponents++;
+                    }
+                }
 
                 return numConnectedComponents;
             }
@@ -117,19 +121,19 @@ namespace Lab5
 
         public bool IsReachable(string node1name, string node2name)
         {
-            Node node1 = GetNodeByName(node1name);
-            Node node2 = GetNodeByName(node2name);
+            Node? node1 = GetNodeByName(node1name);
+            Node? node2 = GetNodeByName(node2name);
 
-            if (node1 == null || node2 == null)
+            if (node1 is null || node2 is null)
             {
                 throw new Exception($"{node1name} or {node2name} does not exist.)");
             }
 
             // Do a DFS
-            var pred = DFS(node1);
+            Dictionary<Node, Node?> pred = DFS(node1);
 
             // Was a pred for node2 found?
-            return pred[node2] != null;
+            return pred[node2] is not null;
         }
 
 
@@ -142,9 +146,9 @@ namespace Lab5
         /// <returns>A dictionary of the Node to Predecessor Node 
         /// for each node in the graph reachable from the starting node
         /// as discovered by a DFS.</returns>
-        public Dictionary<Node, Node> DFS(Node startingNode, bool reset = true)
+        public Dictionary<Node, Node?> DFS(Node startingNode, bool reset = true)
         {
-            Dictionary<Node, Node> pred = new Dictionary<Node, Node>();
+            Dictionary<Node, Node?> pred = new Dictionary<Node, Node?>();
 
             if (reset)
             {
@@ -152,7 +156,7 @@ namespace Lab5
                 foreach (Node node in Nodes)
                 {
                     pred[node] = null;
-                    node.Color = Color.White;
+                    node.State = VertexState.UnDiscovered;
                 }
             }
 
@@ -162,26 +166,26 @@ namespace Lab5
             return pred;
         }
 
-        private void DFSVisit(Node node, Dictionary<Node, Node> pred)
+        private void DFSVisit(Node node, Dictionary<Node, Node?> pred)
         {
             // color node gray
-            node.Color = Color.Gray;
+            node.State = VertexState.Discovered;
 
             // sort the neighbors so that we visit them in alpha order
             node.Neighbors.Sort();
 
             // visit every neighbor 
-            foreach (var neighbor in node.Neighbors)
+            foreach (Neighbor neighbor in node.Neighbors)
             {
-                if (neighbor.Node.Color == Color.White)
+                if (neighbor.State == VertexState.UnDiscovered)
                 {
-                    pred[neighbor.Node] = node;
-                    DFSVisit(neighbor.Node, pred);
+                    pred[neighbor.AsNode()] = node;
+                    DFSVisit(neighbor.AsNode(), pred);
                 }
             }
 
             // color the node black
-            node.Color = Color.Black;
+            node.State = VertexState.Visited;
         }
 
         // TODO
@@ -194,20 +198,20 @@ namespace Lab5
         /// <returns>A dictionary of the Node to Predecessor Node and Distance 
         /// for each node in the graph reachable from the starting node
         /// as discovered by a BFS.</returns>
-        public Dictionary<Node, (Node pred, int dist)> BFS(Node startingNode)
+        public Dictionary<Node, (Node? pred, int dist)> BFS(Node startingNode)
         {
-            var resultsDictionary = new Dictionary<Node, (Node pred, int dist)>();
+            Dictionary<Node, (Node? pred, int dist)> resultsDictionary = new Dictionary<Node, (Node? pred, int dist)>();
 
             // initialize the dictionary 
 
-            foreach (var node in Nodes)
+            foreach (Node node in Nodes)
             {
-                node.Color = Color.White;
+                node.State = VertexState.UnDiscovered;
                 resultsDictionary[node] = (null, int.MaxValue);
             }
 
             // setting up the starting node
-            startingNode.Color = Color.Gray;
+            startingNode.State = VertexState.Discovered;
             resultsDictionary[startingNode] = (null, 0);
 
             // create a queue
@@ -219,21 +223,17 @@ namespace Lab5
             {
 
                 // get the front of queue 
-                var node = queue.Peek();
+                Node node = queue.Dequeue();
 
-                foreach (var neighbor in node.Neighbors)
+                foreach (Neighbor neighbor in node.Neighbors)
                 {
                     int distance = resultsDictionary[node].dist;
-                    resultsDictionary[neighbor.Node] = (node, distance + 1);
-                    queue.Enqueue(neighbor.Node);
+                    resultsDictionary[neighbor.AsNode()] = (node, distance + 1);
+                    queue.Enqueue(neighbor.AsNode());
                 }
 
-                queue.Dequeue();
-                node.Color = Color.Black;
-
+                node.State = VertexState.Visited;
             }
-
-
 
             return resultsDictionary;
         }

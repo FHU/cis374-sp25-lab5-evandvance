@@ -14,6 +14,11 @@ public class Neighbor : IVertex
         Weight = weight;
     }
 
+    public Node AsNode()
+    {
+        return Node;
+    }
+
     public override int GetHashCode()
     {
         return Name.GetHashCode();
