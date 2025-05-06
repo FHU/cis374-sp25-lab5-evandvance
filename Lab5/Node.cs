@@ -1,38 +1,31 @@
-﻿namespace Lab5;
+﻿
+namespace Lab5;
 
-public enum Color
-{
-	White, Gray, Black
-}
-
-public class Neighbor : IComparable<Neighbor>
-{
-	public Node Node { get; set; }
-	public int Weight { get; set; }
-
-    public int CompareTo(Neighbor? other)
-    {
-        return this.CompareTo(other);
-    }
-}
-
-public class Node : IComparable<Node>
+public class Node : IVertex
 {
 	public string Name { get; set; }
 	public List<Neighbor> Neighbors { get; set; }
-	public Color Color { get; set; }
+	public VertexState State { get; set; }
 
-	public Node(string name = "", Color color = Color.White)	
+	public Node(string name, VertexState state = VertexState.UnDiscovered)
 	{
 		Name = name;
-		Color = color;
+		State = state;
 		Neighbors = new List<Neighbor>();
 	}
 
-	public int CompareTo(Node? other)
+	public override int GetHashCode()
 	{
-		return this.Name.CompareTo(other.Name);
+		return Name.GetHashCode();
+	}
+
+	public override bool Equals(object? obj)
+	{
+		return obj is Node node && Name == node.Name;
+	}
+
+	int IComparable<IVertex>.CompareTo(IVertex? other)
+	{
+		return this.Name.CompareTo(other?.Name);
 	}
 }
-
-
