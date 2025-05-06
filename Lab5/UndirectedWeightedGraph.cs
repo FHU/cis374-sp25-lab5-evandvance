@@ -22,7 +22,7 @@ public class UndirectedWeightedGraph
             using (StreamReader sr = new StreamReader(path))
             {
                 string line;
-                while ((line = sr.ReadLine()) != null)
+                while ((line = sr.ReadLine()!) is not null)
                 {
                     line = line.Trim();
                     if (line == "")
@@ -77,24 +77,19 @@ public class UndirectedWeightedGraph
 
     public void AddEdge(string node1Name, string node2Name, int weight)
     {
-        Node node1 = GetNodeByName(node1Name);
-        Node node2 = GetNodeByName(node2Name);
+        Node? node1 = GetNodeByName(node1Name);
+        Node? node2 = GetNodeByName(node2Name);
 
-        if (node1 == null || node2 == null)
+        if (node1 is null || node2 is null)
         {
             throw new Exception("Invalid node name");
         }
 
-        node1.Neighbors.Add(new Neighbor() { Node = node2, Weight = weight });
-        node2.Neighbors.Add(new Neighbor() { Node = node1, Weight = weight });
+        node1.Neighbors.Add(new Neighbor(node2, weight));
+        node2.Neighbors.Add(new Neighbor(node1, weight));
     }
 
-    private Node GetNodeByName(string nodeName)
-    {
-        var node = Nodes.Find(node => node.Name == nodeName);
-
-        return node;
-    }
+    public Node? GetNodeByName(string nodeName) => Nodes.Find(node => node.Name == nodeName);
 
     public int ConnectedComponents
     {
@@ -103,12 +98,21 @@ public class UndirectedWeightedGraph
             int numConnectedComponents = 0;
 
             // choose a random vertex
+            Node startingNode = Nodes[0];
             // do a DFS from that vertex
+            // Leave reset to true to initialize state
+            DFS(startingNode, reset: true);
             // increment the CC count
-            // choose a random vertex that is white (unvisited)
-            // do a DFS from that vertex
-            // increment the CC count
-            // choose a random vertex that is white (unvisited)
+            numConnectedComponents++;
+
+            foreach (Node node in Nodes[1..])
+            {
+                if (node.State == VertexState.UnDiscovered)
+                {
+                    DFS(node, reset: false);
+                    numConnectedComponents++;
+                }
+            }
 
             return numConnectedComponents;
         }
@@ -117,10 +121,10 @@ public class UndirectedWeightedGraph
 
     public bool IsReachable(string node1name, string node2name)
     {
-        Node node1 = GetNodeByName(node1name);
-        Node node2 = GetNodeByName(node2name);
+        Node? node1 = GetNodeByName(node1name);
+        Node? node2 = GetNodeByName(node2name);
 
-        if (node1 == null || node2 == null)
+        if (node1 is null || node2 is null)
         {
             throw new Exception($"{node1name} or {node2name} does not exist.)");
         }
@@ -129,7 +133,7 @@ public class UndirectedWeightedGraph
         var pred = DFS(node1);
 
         // Was a pred for node2 found?
-        return pred[node2] != null;
+        return pred[node2] is not null;
     }
 
 
@@ -142,9 +146,9 @@ public class UndirectedWeightedGraph
     /// <returns>A dictionary of the Node to Predecessor Node 
     /// for each node in the graph reachable from the starting node
     /// as discovered by a DFS.</returns>
-    public Dictionary<Node, Node> DFS(Node startingNode, bool reset = true)
+    public Dictionary<Node, Node?> DFS(Node startingNode, bool reset = true)
     {
-        Dictionary<Node, Node> pred = new Dictionary<Node, Node>();
+        Dictionary<Node, Node?> pred = new Dictionary<Node, Node?>();
 
         if (reset)
         {
@@ -152,7 +156,7 @@ public class UndirectedWeightedGraph
             foreach (Node node in Nodes)
             {
                 pred[node] = null;
-                node.Color = Color.White;
+                node.State = VertexState.UnDiscovered;
             }
         }
 
@@ -162,7 +166,6 @@ public class UndirectedWeightedGraph
         return pred;
     }
 
-    //TODO
     /// <summary>
     /// Find the first path between the given nodes in a DFS manner 
     /// and return its total cost. Choices/ties are made in alphabetical order. 
@@ -176,60 +179,38 @@ public class UndirectedWeightedGraph
         // 1. initilize all the things 
         pathList = new List<Node>();
 
-        // pred[] => node name to its predecessor node
-        Dictionary<string, Node> pred = new Dictionary<string, Node>();
-        // add every node name to the dictionary with a null pred.
-        foreach (var node in Nodes)
+        Node? node1 = GetNodeByName(node1name);
+        Node? node2 = GetNodeByName(node2name);
+
+        if (node1 is null || node2 is null)
         {
-            pred[node.Name] = null;
+            throw new Exception($"{node1name} or {node2name} does not exist.)");
         }
 
-        // dist[] => node name to distance from the source node
-        Dictionary<string, int> dist = new Dictionary<string, int>();
-        // setup all distances to infinity
-        foreach (var node in Nodes)
-        {
-            dist[node.Name] = int.MaxValue;
-        }
-
-        // initialize all colors to white
-
-        var node1 = FindNode(node1name);
-        var node2 = FindNode(node2name);
-
-        // 2. Do all the path finding computation/generation
-        DFSVisit(node1, node2, pred);
+        var pred = DFS(node1);
 
         // 3. Post-process the data structures and convert them to the right format.
 
-        /*
-            * PRED 
-            * a -> c
-            * c -> d
-            * d -> s 
-            *
-            *  s -> t 
-            */
+        int sumOfAllWeights = 0;
 
-        // pathList = s, d, c, a
-        //int cost = 0;
-        //currentNode = endNode
-        //for ...
-        //    pathList.Add(currentNode)
-        //    predNode = pred[currentNode]
-        //    weight = predNode.neighbors[currentNode].weight
-        //    cost += weight
-        //    currentNode = predNode
+        Node? currentNode = node2;
 
-        //return cost;
+        while (currentNode is not null)
+        {
+            sumOfAllWeights += pred[currentNode] is not null ? pred[currentNode]!.Neighbors.Find(x => x.AsNode() == currentNode)!.Weight : 0;
+            pathList.Add(currentNode);
+            currentNode = pred[currentNode];
+        }
 
-        return 0;
+        pathList.Reverse(); // Reverse path list to make it in node1 -> node2 order
+
+        return sumOfAllWeights;
     }
 
-    private void DFSVisit(Node node, Dictionary<Node, Node> pred)
+    private void DFSVisit(Node node, Dictionary<Node, Node?> pred)
     {
         // color node gray
-        node.Color = Color.Gray;
+        node.State = VertexState.Discovered;
 
         // sort the neighbors so that we visit them in alpha order
         node.Neighbors.Sort();
@@ -237,18 +218,17 @@ public class UndirectedWeightedGraph
         // visit every neighbor 
         foreach (var neighbor in node.Neighbors)
         {
-            if (neighbor.Node.Color == Color.White)
+            if (neighbor.State == VertexState.UnDiscovered)
             {
-                pred[neighbor.Node] = node;
-                DFSVisit(neighbor.Node, pred);
+                pred[neighbor.AsNode()] = node;
+                DFSVisit(neighbor.AsNode(), pred);
             }
         }
 
         // color the node black
-        node.Color = Color.Black;
+        node.State = VertexState.Visited;
     }
 
-    // TODO
     /// <summary>
     /// Searches the graph in a breadth-first manner, creating a
     /// dictionary of the Node to Predecessor and Distance discovered by starting at the given node.
@@ -258,19 +238,19 @@ public class UndirectedWeightedGraph
     /// <returns>A dictionary of the Node to Predecessor Node and Distance 
     /// for each node in the graph reachable from the starting node
     /// as discovered by a BFS.</returns>
-    public Dictionary<Node, (Node pred, int dist)> BFS(Node startingNode)
+    public Dictionary<Node, (Node? pred, int dist)> BFS(Node startingNode)
     {
-        var resultsDictionary = new Dictionary<Node, (Node pred, int dist)>();
+        Dictionary<Node, (Node? pred, int dist)> resultsDictionary = new Dictionary<Node, (Node? pred, int dist)>();
 
         // initialize the dictionary 
-        foreach (var node in Nodes)
+        foreach (Node node in Nodes)
         {
-            node.Color = Color.White;
+            node.State = VertexState.UnDiscovered;
             resultsDictionary[node] = (null, int.MaxValue);
         }
 
         // setting up the starting node
-        startingNode.Color = Color.Gray;
+        startingNode.State = VertexState.Discovered;
         resultsDictionary[startingNode] = (null, 0);
 
         // create a queue
@@ -281,29 +261,30 @@ public class UndirectedWeightedGraph
         while (queue.Count > 0)
         {
             // get the front of queue 
-            var node = queue.Peek();
+            var node = queue.Dequeue();
 
             // sort the neighbors so that we visit them in alpha order
             node.Neighbors.Sort();
 
             foreach (var neighbor in node.Neighbors)
             {
-                if (neighbor.Node.Color == Color.White)
+                if (neighbor.State == VertexState.UnDiscovered)
                 {
-                    neighbor.Node.Color = Color.Gray;
+                    neighbor.State = VertexState.Discovered;
                     int distance = resultsDictionary[node].dist;
-                    resultsDictionary[neighbor.Node] = (node, distance + 1);
-                    queue.Enqueue(neighbor.Node);
+                    resultsDictionary[neighbor.AsNode()] = (node, distance + 1);
+                    queue.Enqueue(neighbor.AsNode());
                 }
             }
 
-            queue.Dequeue();
-            node.Color = Color.Black;
+            node.State = VertexState.Visited;
         }
 
         return resultsDictionary;
     }
 
+
+    // TODO
     /// <summary>
     /// Find the first path between the given nodes in a BFS manner 
     /// and return its total cost. Choices/ties are made in alphabetical order. 
@@ -321,7 +302,8 @@ public class UndirectedWeightedGraph
     }
 
 
-    public Dictionary<Node, (Node pred, int cost)> Dijkstra(Node startingNode)
+    // TODO
+    public Dictionary<Node, (Node? pred, int cost)> Dijkstra(Node startingNode)
     {
         // PriorityQueue<Neighbor, int> priorityQueue = new PriorityQueue<Neighbor, int>();
         // var neightbor = new Neighbor(){ Node= new Node(), Weight= 4};
@@ -334,6 +316,7 @@ public class UndirectedWeightedGraph
         return null;
     }
 
+    // TODO
     /// <summary>
     /// Find the first path between the given nodes using Dijkstra's algorithm
     /// and return its total cost. Choices/ties are made in alphabetical order. 
