@@ -174,10 +174,10 @@ public class UndirectedWeightedGraph
     /// <param name="node2name">The ending node's name</param>
     /// <param name="pathList">A list of the nodes in the path from the starting node to the ending node</param>
     /// <returns>The total cost of the weights in the path</returns>
-    public int DFSPathBetween(string node1name, string node2name, out List<Node> pathList)
+    public (int costToNode, List<Node> pathList) DFSPathBetween(string node1name, string node2name)
     {
         // 1. initilize all the things 
-        pathList = new List<Node>();
+        List<Node> pathList = new List<Node>();
 
         Node? node1 = GetNodeByName(node1name);
         Node? node2 = GetNodeByName(node2name);
@@ -204,7 +204,7 @@ public class UndirectedWeightedGraph
 
         pathList.Reverse(); // Reverse path list to make it in node1 -> node2 order
 
-        return sumOfAllWeights;
+        return (sumOfAllWeights, pathList);
     }
 
     private void DFSVisit(Node node, Dictionary<Node, Node?> pred)
@@ -284,7 +284,6 @@ public class UndirectedWeightedGraph
     }
 
 
-    // TODO
     /// <summary>
     /// Find the first path between the given nodes in a BFS manner 
     /// and return its total cost. Choices/ties are made in alphabetical order. 
@@ -293,12 +292,26 @@ public class UndirectedWeightedGraph
     /// <param name="node2name">The ending node's name</param>
     /// <param name="pathList">A list of the nodes in the path from the starting node to the ending node</param>
     /// <returns>The total cost of the weights in the path</returns>
-    public int BFSPathBetween(string node1, string node2, out List<Node> pathList)
+    public (int hopCount, List<Node> pathList) BFSPathBetween(string node1name, string node2name)
     {
-        pathList = new List<Node>();
+        List<Node> pathList = new List<Node>();
 
+        Node? node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
+        Node? node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
-        return 0;
+        var pred = BFS(node1);
+
+        Node? currentNode = node2;
+
+        while (currentNode is not null)
+        {
+            pathList.Append(currentNode);
+            currentNode = pred[currentNode].pred;
+        }
+
+        pathList.Reverse();
+
+        return (pred[node2].dist, pathList);
     }
 
 
