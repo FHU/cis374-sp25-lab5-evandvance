@@ -6,6 +6,7 @@ public class Neighbor : IVertex
     public VertexState State { get { return Node.State; } set { Node.State = value; } }
     public string Name { get { return Node.Name; } set { Node.Name = value; } }
     public List<Neighbor> Neighbors { get { return Node.Neighbors; } set { Node.Neighbors = value; } }
+    public bool IsVisited => Node.IsVisited;
     public int Weight { get; set; }
 
     public Neighbor(Node node, int weight = 1)

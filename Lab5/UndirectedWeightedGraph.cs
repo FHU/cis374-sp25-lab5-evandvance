@@ -315,21 +315,54 @@ public class UndirectedWeightedGraph
     }
 
 
-    // TODO
     public Dictionary<Node, (Node? pred, int cost)> Dijkstra(Node startingNode)
     {
-        // PriorityQueue<Neighbor, int> priorityQueue = new PriorityQueue<Neighbor, int>();
-        // var neightbor = new Neighbor(){ Node= new Node(), Weight= 4};
+        PriorityQueue<Node, int> priorityQueue = new PriorityQueue<Node, int>();
+        Dictionary<Node, (Node? pred, int cost)> resultsDictionary = new Dictionary<Node, (Node? pred, int cost)>();
 
-        // priorityQueue.Enqueue( neightbor, neightbor.Weight + currentCost);
+        // initialize the dictionary
+        foreach (Node node in Nodes)
+        {
+            node.State = VertexState.UnDiscovered;
+            resultsDictionary[node] = (null, int.MaxValue);
+        }
 
-        // HashSet<Node> visited = new HashSet<Node>();    
+        // setting up the starting node
+        startingNode.State = VertexState.Discovered;
+        resultsDictionary[startingNode] = (null, 0);
+        priorityQueue.Enqueue(startingNode, 0);
+
+        while (priorityQueue.Count > 0)
+        {
+            // get the front of queue 
+            var node = priorityQueue.Dequeue();
+
+            if (node.IsVisited) continue;
+
+            // sort the neighbors so that we visit them in alpha order
+            node.Neighbors.Sort();
+
+            foreach (var neighbor in node.Neighbors)
+            {
+                if (neighbor.IsVisited) continue; // I think I might not need this line
+                if (neighbor.State == VertexState.UnDiscovered) neighbor.State = VertexState.Discovered;
+
+                int distance = resultsDictionary[node].cost + neighbor.Weight;
+
+                if (distance < resultsDictionary[neighbor.AsNode()].cost)
+                {
+                    resultsDictionary[neighbor.AsNode()] = (node, distance);
+                    priorityQueue.Enqueue(neighbor.AsNode(), distance);
+                }
+            }
+
+            node.State = VertexState.Visited;
+        }
 
 
-        return null;
+        return resultsDictionary;
     }
 
-    // TODO
     /// <summary>
     /// Find the first path between the given nodes using Dijkstra's algorithm
     /// and return its total cost. Choices/ties are made in alphabetical order. 
@@ -338,11 +371,29 @@ public class UndirectedWeightedGraph
     /// <param name="node2name">The ending node name</param>
     /// <param name="pathList">A list of the nodes in the path from the starting node to the ending node</param>
     /// <returns>The total cost of the weights in the path</returns>
-    public int DijkstraPathBetween(string node1, string node2, out List<Node> pathList)
+    public (int cost, List<Node> pathList) DijkstraPathBetween(string node1, string node2)
     {
-        pathList = new List<Node>();
+        List<Node> pathList = new List<Node>();
 
-        return 0;
+        Node? node1Obj = GetNodeByName(node1) ?? throw new Exception($"{node1} does not exist in this graph");
+        Node? node2Obj = GetNodeByName(node2) ?? throw new Exception($"{node2} does not exist in this graph");
+
+        var pred = Dijkstra(node1Obj);
+
+        Node? currentNode = node2Obj;
+        int cost = 0;
+
+        while (currentNode is not null)
+        {
+            pathList.Append(currentNode);
+            if (pred[currentNode].pred is not null) cost += pred[currentNode].cost;
+            currentNode = pred[currentNode].pred;
+        }
+
+        pathList.Reverse();
+
+        return (cost, pathList);
+
     }
 
 }

@@ -14,6 +14,8 @@ public class Node : IVertex
 		Neighbors = new List<Neighbor>();
 	}
 
+	public bool IsVisited => State == VertexState.Visited;
+
 	public override int GetHashCode()
 	{
 		return Name.GetHashCode();
