@@ -54,7 +54,7 @@ public class UndirectedWeightedGraph
         // Add nodes
         string[] nodeNames = Regex.Split(lines[0], @"\W+");
 
-        foreach (var name in nodeNames)
+        foreach (String name in nodeNames)
         {
             Nodes.Add(new Node(name));
         }
@@ -75,15 +75,12 @@ public class UndirectedWeightedGraph
         }
     }
 
-    public void AddEdge(string node1Name, string node2Name, int weight)
+    public void AddEdge(string node1name, string node2name, int weight)
     {
-        Node? node1 = GetNodeByName(node1Name);
-        Node? node2 = GetNodeByName(node2Name);
+        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
-        if (node1 is null || node2 is null)
-        {
-            throw new Exception("Invalid node name");
-        }
+        if (node1 == node2) throw new Exception("Cannot add an edge to itself");
 
         node1.Neighbors.Add(new Neighbor(node2, weight));
         node2.Neighbors.Add(new Neighbor(node1, weight));
@@ -121,13 +118,8 @@ public class UndirectedWeightedGraph
 
     public bool IsReachable(string node1name, string node2name)
     {
-        Node? node1 = GetNodeByName(node1name);
-        Node? node2 = GetNodeByName(node2name);
-
-        if (node1 is null || node2 is null)
-        {
-            throw new Exception($"{node1name} or {node2name} does not exist.)");
-        }
+        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
         // Do a DFS
         var pred = DFS(node1);
@@ -179,13 +171,8 @@ public class UndirectedWeightedGraph
         // 1. initilize all the things 
         List<Node> pathList = new List<Node>();
 
-        Node? node1 = GetNodeByName(node1name);
-        Node? node2 = GetNodeByName(node2name);
-
-        if (node1 is null || node2 is null)
-        {
-            throw new Exception($"{node1name} or {node2name} does not exist.)");
-        }
+        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
         var pred = DFS(node1);
 
@@ -216,7 +203,7 @@ public class UndirectedWeightedGraph
         node.Neighbors.Sort();
 
         // visit every neighbor 
-        foreach (var neighbor in node.Neighbors)
+        foreach (Neighbor neighbor in node.Neighbors)
         {
             if (neighbor.State == VertexState.UnDiscovered)
             {
@@ -261,12 +248,12 @@ public class UndirectedWeightedGraph
         while (queue.Count > 0)
         {
             // get the front of queue 
-            var node = queue.Dequeue();
+            Node node = queue.Dequeue();
 
             // sort the neighbors so that we visit them in alpha order
             node.Neighbors.Sort();
 
-            foreach (var neighbor in node.Neighbors)
+            foreach (Neighbor neighbor in node.Neighbors)
             {
                 if (neighbor.State == VertexState.UnDiscovered)
                 {
@@ -296,8 +283,8 @@ public class UndirectedWeightedGraph
     {
         List<Node> pathList = new List<Node>();
 
-        Node? node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
-        Node? node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
         var pred = BFS(node1);
 
@@ -335,14 +322,14 @@ public class UndirectedWeightedGraph
         while (priorityQueue.Count > 0)
         {
             // get the front of queue 
-            var node = priorityQueue.Dequeue();
+            Node node = priorityQueue.Dequeue();
 
             if (node.IsVisited) continue;
 
             // sort the neighbors so that we visit them in alpha order
             node.Neighbors.Sort();
 
-            foreach (var neighbor in node.Neighbors)
+            foreach (Neighbor neighbor in node.Neighbors)
             {
                 if (neighbor.IsVisited) continue; // I think I might not need this line
                 if (neighbor.State == VertexState.UnDiscovered) neighbor.State = VertexState.Discovered;
@@ -371,16 +358,16 @@ public class UndirectedWeightedGraph
     /// <param name="node2name">The ending node name</param>
     /// <param name="pathList">A list of the nodes in the path from the starting node to the ending node</param>
     /// <returns>The total cost of the weights in the path</returns>
-    public (int cost, List<Node> pathList) DijkstraPathBetween(string node1, string node2)
+    public (int cost, List<Node> pathList) DijkstraPathBetween(string node1name, string node2name)
     {
         List<Node> pathList = new List<Node>();
 
-        Node? node1Obj = GetNodeByName(node1) ?? throw new Exception($"{node1} does not exist in this graph");
-        Node? node2Obj = GetNodeByName(node2) ?? throw new Exception($"{node2} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
-        var pred = Dijkstra(node1Obj);
+        var pred = Dijkstra(node1);
 
-        Node? currentNode = node2Obj;
+        Node? currentNode = node2;
         int cost = 0;
 
         while (currentNode is not null)
