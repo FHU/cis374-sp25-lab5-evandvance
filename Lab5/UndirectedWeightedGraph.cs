@@ -168,7 +168,6 @@ public class UndirectedWeightedGraph
     /// <returns>The total cost of the weights in the path</returns>
     public (int costToNode, List<Node> pathList) DFSPathBetween(string node1name, string node2name)
     {
-        // 1. initilize all the things 
         List<Node> pathList = new List<Node>();
 
         Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
@@ -176,11 +175,11 @@ public class UndirectedWeightedGraph
 
         var pred = DFS(node1);
 
-        // 3. Post-process the data structures and convert them to the right format.
-
         int sumOfAllWeights = 0;
 
         Node? currentNode = node2;
+
+        if (pred[currentNode] is null) throw new Exception($"No path exists between {node1name} and {node2name}");
 
         while (currentNode is not null)
         {
@@ -290,6 +289,8 @@ public class UndirectedWeightedGraph
 
         Node? currentNode = node2;
 
+        if (pred[currentNode].pred is null) throw new Exception($"No path exists between {node1name} and {node2name}");
+
         while (currentNode is not null)
         {
             pathList.Append(currentNode);
@@ -331,7 +332,6 @@ public class UndirectedWeightedGraph
 
             foreach (Neighbor neighbor in node.Neighbors)
             {
-                if (neighbor.IsVisited) continue; // I think I might not need this line
                 if (neighbor.State == VertexState.UnDiscovered) neighbor.State = VertexState.Discovered;
 
                 int distance = resultsDictionary[node].cost + neighbor.Weight;
@@ -339,7 +339,8 @@ public class UndirectedWeightedGraph
                 if (distance < resultsDictionary[neighbor.AsNode()].cost)
                 {
                     resultsDictionary[neighbor.AsNode()] = (node, distance);
-                    priorityQueue.Enqueue(neighbor.AsNode(), distance);
+
+                    if (!neighbor.IsVisited) priorityQueue.Enqueue(neighbor.AsNode(), distance);
                 }
             }
 
@@ -368,6 +369,9 @@ public class UndirectedWeightedGraph
         var pred = Dijkstra(node1);
 
         Node? currentNode = node2;
+
+        if (pred[currentNode].pred is null) throw new Exception($"No path exists between {node1name} and {node2name}");
+
         int cost = 0;
 
         while (currentNode is not null)
