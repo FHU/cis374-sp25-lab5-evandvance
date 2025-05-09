@@ -1,0 +1,8 @@
+# An evil graph that breaks the rules
+# node names
+a b
+
+# edges
+a c 4
+
+# edges need to connect 2 nodes in graph

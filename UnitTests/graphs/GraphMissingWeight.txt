@@ -1,0 +1,8 @@
+# An evil graph that breaks the rules
+# node names
+a b
+
+# edges
+a b
+
+# edges need weights
