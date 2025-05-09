@@ -54,20 +54,20 @@ public class UndirectedWeightedGraph
         // Add nodes
         string[] nodeNames = Regex.Split(lines[0], @"\W+");
 
-        foreach (String name in nodeNames)
+        foreach (string name in nodeNames)
         {
             Nodes.Add(new Node(name));
         }
 
         string[] nodeNamesAndWeight;
         // Add edges
-        for (int i = 1; i < lines.Count; i++)
+        foreach (string line in lines[1..])
         {
             // extract node names
-            nodeNamesAndWeight = Regex.Split(lines[i], @"\W+");
+            nodeNamesAndWeight = Regex.Split(line, @"\W+");
             if (nodeNamesAndWeight.Length < 3)
             {
-                throw new Exception("Two nodes and a weight are required for each edge.");
+                throw new MissingWeightException("Two nodes and a weight are required for each edge.");
             }
 
             // add edge between those nodes
@@ -77,12 +77,12 @@ public class UndirectedWeightedGraph
 
     public void AddEdge(string node1name, string node2name, int weight)
     {
-        if (weight < 1) throw new Exception("Weight must be a positive whole number");
+        if (weight < 1) throw new NegativeWeightException("Weight must be a positive whole number");
 
-        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
-        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new MissingNodeException($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new MissingNodeException($"{node2name} does not exist in this graph");
 
-        if (node1 == node2) throw new Exception("Cannot add an edge to itself");
+        if (node1 == node2) throw new SelfNeighborException("Cannot add an edge to itself");
 
         node1.Neighbors.Add(new Neighbor(node2, weight));
         node2.Neighbors.Add(new Neighbor(node1, weight));
@@ -120,8 +120,8 @@ public class UndirectedWeightedGraph
 
     public bool IsReachable(string node1name, string node2name)
     {
-        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
-        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new MissingNodeException($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new MissingNodeException($"{node2name} does not exist in this graph");
 
         // Do a DFS
         var pred = DFS(node1);
@@ -172,8 +172,8 @@ public class UndirectedWeightedGraph
     {
         List<Node> pathList = new List<Node>();
 
-        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
-        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new MissingNodeException($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new MissingNodeException($"{node2name} does not exist in this graph");
 
         var pred = DFS(node1);
 
@@ -181,7 +181,7 @@ public class UndirectedWeightedGraph
 
         Node? currentNode = node2;
 
-        if (pred[currentNode] is null) throw new Exception($"No path exists between {node1name} and {node2name}");
+        if (pred[currentNode] is null) throw new MissingPathException($"No path exists between {node1name} and {node2name}");
 
         while (currentNode is not null)
         {
@@ -284,14 +284,14 @@ public class UndirectedWeightedGraph
     {
         List<Node> pathList = new List<Node>();
 
-        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
-        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new MissingNodeException($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new MissingNodeException($"{node2name} does not exist in this graph");
 
         var pred = BFS(node1);
 
         Node? currentNode = node2;
 
-        if (pred[currentNode].pred is null) throw new Exception($"No path exists between {node1name} and {node2name}");
+        if (pred[currentNode].pred is null) throw new MissingPathException($"No path exists between {node1name} and {node2name}");
 
         while (currentNode is not null)
         {
@@ -365,14 +365,14 @@ public class UndirectedWeightedGraph
     {
         List<Node> pathList = new List<Node>();
 
-        Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
-        Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
+        Node node1 = GetNodeByName(node1name) ?? throw new MissingNodeException($"{node1name} does not exist in this graph");
+        Node node2 = GetNodeByName(node2name) ?? throw new MissingNodeException($"{node2name} does not exist in this graph");
 
         var pred = Dijkstra(node1);
 
         Node? currentNode = node2;
 
-        if (pred[currentNode].pred is null) throw new Exception($"No path exists between {node1name} and {node2name}");
+        if (pred[currentNode].pred is null) throw new MissingPathException($"No path exists between {node1name} and {node2name}");
 
         int cost = 0;
 
