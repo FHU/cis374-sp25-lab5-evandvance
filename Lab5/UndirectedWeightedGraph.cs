@@ -77,6 +77,8 @@ public class UndirectedWeightedGraph
 
     public void AddEdge(string node1name, string node2name, int weight)
     {
+        if (weight < 1) throw new Exception("Weight must be a positive whole number");
+
         Node node1 = GetNodeByName(node1name) ?? throw new Exception($"{node1name} does not exist in this graph");
         Node node2 = GetNodeByName(node2name) ?? throw new Exception($"{node2name} does not exist in this graph");
 
