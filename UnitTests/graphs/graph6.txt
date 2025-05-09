@@ -3,6 +3,6 @@
 a b
 
 # edges
-a a 2
+a b -2
 
-# Self edges are not allowed in our current paradigm
+# negative weights are not allowed in our current paradigm
