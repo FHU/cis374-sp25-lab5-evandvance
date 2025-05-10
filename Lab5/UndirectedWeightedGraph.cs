@@ -157,11 +157,6 @@ public class UndirectedWeightedGraph
         // call the recursive method
         DFSVisit(startingNode, pred);
 
-        foreach (var key in pred.Keys)
-        {
-            Console.WriteLine($"{key.Name} -> {pred[key]?.Name}");
-        }
-
         return pred;
     }
 
