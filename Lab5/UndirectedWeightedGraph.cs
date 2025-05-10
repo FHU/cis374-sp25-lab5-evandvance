@@ -157,6 +157,11 @@ public class UndirectedWeightedGraph
         // call the recursive method
         DFSVisit(startingNode, pred);
 
+        foreach (var key in pred.Keys)
+        {
+            Console.WriteLine($"{key.Name} -> {pred[key]?.Name}");
+        }
+
         return pred;
     }
 
@@ -295,7 +300,7 @@ public class UndirectedWeightedGraph
 
         while (currentNode is not null)
         {
-            pathList.Append(currentNode);
+            pathList.Add(currentNode);
             currentNode = pred[currentNode].pred;
         }
 
@@ -349,7 +354,6 @@ public class UndirectedWeightedGraph
             node.State = VertexState.Visited;
         }
 
-
         return resultsDictionary;
     }
 
@@ -368,24 +372,21 @@ public class UndirectedWeightedGraph
         Node node1 = GetNodeByName(node1name) ?? throw new MissingNodeException($"{node1name} does not exist in this graph");
         Node node2 = GetNodeByName(node2name) ?? throw new MissingNodeException($"{node2name} does not exist in this graph");
 
-        var pred = Dijkstra(node1);
+        var results = Dijkstra(node1);
 
         Node? currentNode = node2;
 
-        if (pred[currentNode].pred is null) throw new MissingPathException($"No path exists between {node1name} and {node2name}");
-
-        int cost = 0;
+        if (results[currentNode].pred is null) throw new MissingPathException($"No path exists between {node1name} and {node2name}");
 
         while (currentNode is not null)
         {
-            pathList.Append(currentNode);
-            if (pred[currentNode].pred is not null) cost += pred[currentNode].cost;
-            currentNode = pred[currentNode].pred;
+            pathList.Add(currentNode);
+            currentNode = results[currentNode].pred;
         }
 
         pathList.Reverse();
 
-        return (cost, pathList);
+        return (results[node2].cost, pathList);
 
     }
 
