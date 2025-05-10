@@ -2,11 +2,11 @@
 a  b  c  d e
 
 # edges
-a b 3
-b c 6
+a b 2
+b c 5
 
-b e 2
-b d 8
+b e 3
+b d 1
 
 # 1 connected component
 # a and c are reachable
